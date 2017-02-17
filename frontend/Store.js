@@ -90,6 +90,7 @@ class Store extends EventEmitter {
   bananaslugState: ?ControlState;
   colorizerState: ?ControlState;
   regexState: ?ControlState;
+  turboModeState: ?ControlState;
   contextMenu: ?ContextMenu;
   hovered: ?ElementID;
   isBottomTagSelected: boolean;
@@ -127,6 +128,7 @@ class Store extends EventEmitter {
     this.bananaslugState = null;
     this.colorizerState = null;
     this.regexState = null;
+    this.turboModeState = null;
     this.placeholderText = DEFAULT_PLACEHOLDER;
     this.refreshSearch = false;
 
@@ -223,7 +225,8 @@ class Store extends EventEmitter {
       if (
         this.searchRoots &&
         needle.indexOf(this.searchText.toLowerCase()) === 0 &&
-        (!this.regexState || !this.regexState.enabled)
+        (!this.regexState || !this.regexState.enabled) &&
+        (!this.turboModeState || !this.turboModeState.enabled)
       ) {
         this.searchRoots = this.searchRoots
           .filter(item => {
@@ -232,9 +235,9 @@ class Store extends EventEmitter {
               (node.get('text') && node.get('text').toLowerCase().indexOf(needle) !== -1) ||
               (typeof node.get('children') === 'string' && node.get('children').toLowerCase().indexOf(needle) !== -1);
           });
-      } else {
+      } else {        
         this.searchRoots = this._nodes.entrySeq()
-          .filter(([key, val]) => nodeMatchesText(val, needle, key, this))
+          .filter(([key, val]) => nodeMatchesText(val, text, key, this))
           .map(([key, val]) => key)
           .toList();
       }
@@ -496,6 +499,13 @@ class Store extends EventEmitter {
     this.changeSearch(this.searchText);
   }
 
+  changeTurboMode(state: ControlState) {
+    this.turboModeState = state;
+    this.emit('turbomodechange');
+    this.refreshSearch = true;
+    this.changeSearch(this.searchText);
+  }
+
   // Private stuff
   _establishConnection() {
     var tries = 0;
@@ -568,7 +578,7 @@ class Store extends EventEmitter {
             this.searchRoots &&
             nodeMatchesText(
               childNode,
-              this.searchText.toLowerCase(),
+              this.searchText,
               childID,
               this,
           )) {

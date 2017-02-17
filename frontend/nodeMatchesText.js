@@ -12,6 +12,7 @@
 
 import type {Map} from 'immutable';
 import type Store from './Store';
+import turboMatch from './turboMatch';
 
 function nodeMatchesText(node: Map, needle: string, key: string, store: Store): boolean {
   var name = node.get('name');
@@ -20,6 +21,10 @@ function nodeMatchesText(node: Map, needle: string, key: string, store: Store): 
     return false;
   }
   var useRegex = !!store.regexState && store.regexState.enabled;
+  var useTurbo = !!store.turboModeState && store.turboModeState.enabled;
+  if (useTurbo) {
+    return turboMatch(node, needle, key, store);
+  }
   if (name) {
     if (node.get('nodeType') !== 'Wrapper') {
       return validString(name, needle, useRegex);
@@ -38,10 +43,10 @@ function nodeMatchesText(node: Map, needle: string, key: string, store: Store): 
 
 function validString(str: string, needle: string, regex: boolean): boolean {
   if (regex) {
-    var re = new RegExp(needle, 'i');
+    var re = new RegExp(needle.toLowerCase(), 'i');
     return re.test(str.toLowerCase());
   }
-  return str.toLowerCase().indexOf(needle) !== -1;
+  return str.toLowerCase().indexOf(needle.toLowerCase()) !== -1;
 }
 
 module.exports = nodeMatchesText;
